@@ -1,15 +1,23 @@
 'use strict'
 const chatForm     = document.getElementById('chat-form')
 const chatMessages = document.querySelector('.chat-messages')
+const users        = document.getElementById('users')
+const roomName     = document.getElementById('room-name')
 const inputField   = document.getElementById('msg')
 
+const {username, room} = Qs.parse(location.search,{
+    ignoreQueryPrefix:true
+})
+
 const socket = io()
+
+socket.emit('joinRoom', {username, room})
 
 socket.on('message', msg => {
   outputMessage(msg)
 
+  console.log(msg)
   chatMessages.scrollTop = chatMessages.scrollHeight
-
   inputField.value = ''
   inputField.focus()
 })
@@ -24,14 +32,11 @@ chatForm.addEventListener('submit', e => {
 function outputMessage(message) {
   const div = document.createElement('div')
   div.classList.add('message')
-
   console.log(message)
-
   const text = `
     <p class="meta">${message.user} <span>${message.time}</span></p>
-    <p class="text">${message.text} ${message.time}</p>
+    <p class="text">${message.text}</p>
     `
-
   div.innerHTML = text
 
   document.querySelector('.chat-messages').appendChild(div)
