@@ -11,10 +11,11 @@ const io       = socketio(server)
 const PORT     = process.env.PORT || 3000
 const botName  = "Admin"
 
-const formatMessage   = require('./utils/messages')
+const formatMessage      = require('./utils/messages')
 const {userJoin,
        getCurrentUser,
-       userLeave }    = require('./utils/users')
+       userLeave,
+       getRoomUsers }    = require('./utils/users')
 
 // Serve Static Files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -30,6 +31,11 @@ io.on('connection', socket => {
       socket.emit('message', formatMessage(botName, `Hello World. It's currently ${moment().format('h:mm a')}`))
 
       socket.broadcast.to(user.room).emit('message', formatMessage(botName, `${user.username} has joined the chat`))
+
+      io.to(user.room).emit('roomUsers', {
+        room: user.room,
+        users: getRoomUsers(user.room)
+      })
   })
 
 
@@ -40,9 +46,15 @@ io.on('connection', socket => {
 
  socket.on('disconnect', () => {
     const user = userLeave(socket.id)
-    console.log(user, "user being logged")
 
-   io.emit('message', `X has left the chat`)
+    if (user) {
+      io.to(user.room).emit('message', formatMessage(botName, `${user.username} has left the chat`))
+
+      io.to(user.room).emit('roomUsers', {
+        room: user.room,
+        users: getRoomUsers(user.room)
+      })
+    }
  })
 
 //end
